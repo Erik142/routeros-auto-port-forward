@@ -2,9 +2,10 @@ package kubernetes
 
 import (
 	"context"
-	"flag"
 	"path/filepath"
+	"strings"
 
+	"github.com/pborman/getopt"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -12,14 +13,17 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+const PortForwardEnabledAnnotation = "routeros.portforward.enabled"
+const PortForwardPorts = "routeros.portforward.ports"
+
 func CreateClientSet() (*kubernetes.Clientset, error) {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		kubeconfig = getopt.StringLong("kubeconfig", 'c', filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		kubeconfig = getopt.StringLong("kubeconfig", 'c', "", "absolute path to the kubeconfig file")
 	}
-	flag.Parse()
+	getopt.Parse()
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 
@@ -43,7 +47,8 @@ func GetServices(c *kubernetes.Clientset) ([]v1.Service, error) {
 	loadBalancerServices := []v1.Service{}
 
 	for _, service := range services {
-		if service.Spec.Type == v1.ServiceTypeLoadBalancer {
+		portForwardEnabledStr, ok := service.Annotations[PortForwardEnabledAnnotation]
+		if service.Spec.Type == v1.ServiceTypeLoadBalancer && ok && strings.TrimSpace(strings.ToLower(portForwardEnabledStr)) == "true" {
 			loadBalancerServices = append(loadBalancerServices, service)
 		}
 	}
