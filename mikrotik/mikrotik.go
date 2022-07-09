@@ -68,6 +68,8 @@ func DeletePortForward(client routeros.Client, portForward PortForward) (bool, e
 		id := sentence.Map[".id"]
 		deletePortForwardCommand := GetDeletePortForwardCommand(id)
 
+		log.Println(deletePortForwardCommand)
+
 		_, err := client.RunArgs(deletePortForwardCommand)
 
 		if err != nil {

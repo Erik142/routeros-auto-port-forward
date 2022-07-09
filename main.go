@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/Erik142/routeros-auto-port-forward/kubernetes"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/Erik142/routeros-auto-port-forward/kubernetes"
 )
 
 func cleanup() {
+	log.Println("Cleaning up...")
 	kubernetes.Close()
 }
 
@@ -20,5 +23,7 @@ func main() {
 		cleanup()
 		os.Exit(1)
 	}()
+
+	log.Println("Listening for service changes...")
 	kubernetes.Listen()
 }
